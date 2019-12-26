@@ -153,12 +153,12 @@ resource "aws_lb_target_group" "vault_http_8200" {
 resource "aws_lb_listener" "vault_80" {
   count = var.create && !var.use_lb_cert ? 1 : 0
 
-  load_balancer_arn = aws_lb.vault.arn
+  load_balancer_arn = aws_lb.vault[count.index].arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
-    target_group_arn = aws_lb_target_group.vault_http_8200.arn
+    target_group_arn = aws_lb_target_group.vault_http_8200[count.index].arn
     type             = "forward"
   }
 }
@@ -205,14 +205,14 @@ resource "aws_lb_target_group" "vault_https_8200" {
 resource "aws_lb_listener" "vault_443" {
   count = var.create && var.use_lb_cert ? 1 : 0
 
-  load_balancer_arn = aws_lb.vault.arn
+  load_balancer_arn = aws_lb.vault[count.index].arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = var.lb_ssl_policy
-  certificate_arn   = aws_iam_server_certificate.vault.arn
+  certificate_arn   = aws_iam_server_certificate.vault[count.index].arn
 
   default_action {
-    target_group_arn = aws_lb_target_group.vault_https_8200.arn
+    target_group_arn = aws_lb_target_group.vault_https_8200[count.index].arn
     type             = "forward"
   }
 }
@@ -220,7 +220,7 @@ resource "aws_lb_listener" "vault_443" {
 resource "aws_lb_listener" "vault_8200" {
   count = var.create ? 1 : 0
 
-  load_balancer_arn = aws_lb.vault.arn
+  load_balancer_arn = aws_lb.vault[count.index].arn
   port              = "8200"
   protocol          = var.use_lb_cert ? "HTTPS" : "HTTP"
   ssl_policy        = var.use_lb_cert ? var.lb_ssl_policy : ""
