@@ -14,7 +14,7 @@ resource "aws_security_group" "vault_lb" {
 resource "aws_security_group_rule" "vault_lb_http_80" {
   count = var.create ? 1 : 0
 
-  security_group_id = aws_security_group.vault_lb.id
+  security_group_id = aws_security_group.vault_lb[count.index].id
   type              = "ingress"
   protocol          = "tcp"
   from_port         = 80
@@ -25,7 +25,7 @@ resource "aws_security_group_rule" "vault_lb_http_80" {
 resource "aws_security_group_rule" "vault_lb_https_443" {
   count = var.create && var.use_lb_cert ? 1 : 0
 
-  security_group_id = aws_security_group.vault_lb.id
+  security_group_id = aws_security_group.vault_lb[count.index].id
   type              = "ingress"
   protocol          = "tcp"
   from_port         = 443
@@ -36,7 +36,7 @@ resource "aws_security_group_rule" "vault_lb_https_443" {
 resource "aws_security_group_rule" "vault_lb_tcp_8200" {
   count = var.create ? 1 : 0
 
-  security_group_id = aws_security_group.vault_lb.id
+  security_group_id = aws_security_group.vault_lb[count.index].id
   type              = "ingress"
   protocol          = "tcp"
   from_port         = 8200
@@ -47,7 +47,7 @@ resource "aws_security_group_rule" "vault_lb_tcp_8200" {
 resource "aws_security_group_rule" "outbound_tcp" {
   count = var.create ? 1 : 0
 
-  security_group_id = aws_security_group.vault_lb.id
+  security_group_id = aws_security_group.vault_lb[count.index].id
   type              = "egress"
   protocol          = "tcp"
   from_port         = 0
@@ -69,7 +69,7 @@ data "aws_elb_service_account" "vault_lb_access_logs" {
 resource "aws_s3_bucket" "vault_lb_access_logs" {
   count = var.create && !var.lb_bucket_override ? 1 : 0
 
-  bucket = random_id.vault_lb_access_logs.hex
+  bucket = random_id.vault_lb_access_logs[count.index].hex
   acl    = "private"
   tags   = merge(var.tags, map("Name", format("%s-vault-lb-access-logs", var.name)))
 
@@ -86,10 +86,10 @@ resource "aws_s3_bucket" "vault_lb_access_logs" {
       "Action": [
         "s3:PutObject"
       ],
-      "Resource": "arn:aws:s3:::${random_id.vault_lb_access_logs.hex}${var.lb_bucket_prefix != "" ? format("//", var.lb_bucket_prefix) : ""}/AWSLogs/*",
+      "Resource": "arn:aws:s3:::${random_id.vault_lb_access_logs[count.index].hex}${var.lb_bucket_prefix != "" ? format("//", var.lb_bucket_prefix) : ""}/AWSLogs/*",
       "Principal": {
         "AWS": [
-          "${data.aws_elb_service_account.vault_lb_access_logs.arn}"
+          "${data.aws_elb_service_account.vault_lb_access_logs[count.index].arn}"
         ]
       }
     }
@@ -131,7 +131,7 @@ resource "random_id" "vault_http_8200" {
 resource "aws_lb_target_group" "vault_http_8200" {
   count = var.create && !var.use_lb_cert ? 1 : 0
 
-  name     = random_id.vault_http_8200.hex
+  name     = random_id.vault_http_8200[count.index].hex
   vpc_id   = var.vpc_id
   port     = 8200
   protocol = "HTTP"
@@ -166,11 +166,11 @@ resource "aws_lb_listener" "vault_80" {
 resource "aws_iam_server_certificate" "vault" {
   count = var.create && var.use_lb_cert ? 1 : 0
 
-  name              = random_id.vault_lb.hex
+  name              = random_id.vault_lb[count.index].hex
   certificate_body  = var.lb_cert
   private_key       = var.lb_private_key
   certificate_chain = var.lb_cert_chain
-  path              = "/${var.name}-${random_id.vault_lb.hex}/"
+  path              = "/${var.name}-${random_id.vault_lb[count.index].hex}/"
 }
 
 resource "random_id" "vault_https_8200" {
@@ -183,7 +183,7 @@ resource "random_id" "vault_https_8200" {
 resource "aws_lb_target_group" "vault_https_8200" {
   count = var.create && var.use_lb_cert ? 1 : 0
 
-  name     = random_id.vault_https_8200.hex
+  name     = random_id.vault_https_8200[count.index].hex
   vpc_id   = var.vpc_id
   port     = 8200
   protocol = "HTTPS"
